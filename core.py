@@ -91,6 +91,7 @@ class Dungeon:
         west = bin(q)[-4:-2]
         # b = floor(frac(10 * q) * 5) + 1
         b = int(west, 2)
+        # b = q // 4
         if b in self.boundaries.keys():
             return self.boundaries[b]
         else:
