@@ -29,7 +29,7 @@ class Dungeon:
             13: 'Stairway down',
             14: 'Altar',
             15: 'Fountain',
-            16: 'Solid', }
+            16: 'SOLIDSS', }
         # Consider future extension of procedural features, magic mirror, eternal flame
         # Real time override with game state tracking of override occurrence
         self.boundaries = {
@@ -54,6 +54,9 @@ class Dungeon:
         return res
 
     def position_features(self, x: int, y: int, z: int):
+        if x < 1 or x > self.max_height or y < 1 or y > self.max_height:
+            ft = 16  # Solid
+            return ft, self.features[ft]
         q = self.position_bits(x, y, z)
         hi = q // 256
         if hi == 0 or hi > 5:
@@ -141,9 +144,17 @@ class Dungeon:
         self.tracker = self.__module__ + str(width) + str(boundary)
         if boundary == 2:  # Door
             return 'X'+((width - 2) * '\n')+'X'
-        if boundary >= 3:  # Wall
+        if boundary == 3:  # Wall
             return width * 'X\n'
+        if boundary == 4:  # Wall
+            return width * '8\n'
         return '\n'*width
+
+    def print_feature(self, feature, width=3):
+        self.tracker = self.__module__ + str(width) + str(feature)
+        if feature in self.features:
+            return ' ' + self.features[feature][:width - 2] + ' '
+        return ' ' * width
 
     def print_grid_around(self, pos, width=7):
         print(pos)
@@ -152,22 +163,35 @@ class Dungeon:
         # print(d.grid_around(25, 13, 1))
         for r in user_loc:
             # print(r)
-            for c in r:
+            if len(r) == 3:
+                c = r[0]
+            # for c in r:
                 # print(c, c[x])
-                if len(c) == 3:
+                # if len(c) == 3:
                     # print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end=' || ')
                     # for x in range(3):
-                    print(self.print_horizontal(c[0][0], width=width), end='')
-                    # for x in range(3):
+                print(self.print_horizontal(c[0][0], width=width), end='')
+                c = r[1]
+                print(self.print_horizontal(c[0][0], width=width), end='')
+                c = r[2]
+                print(self.print_horizontal(c[0][0], width=width), end='')
+                c = r[0]
+                print('   ||')
+                print(self.print_feature(c[2][0], width=width), end='')
+                c = r[1]
+                print(self.print_feature(c[2][0], width=width), end='')
+                c = r[2]
+                print(self.print_feature(c[2][0], width=width), end='')
+                # for x in range(3):
                     #     print(self.print_vertical(c[1][0], width=width))
                     # print(self.print_horizontal(c[0][0]), self.print_vertical(c[1][0]), end='')
                           # , 'F-', c[2][1], end='')
                     # if x % 3 == 0:
                     #     print()
                     # x += 1
-                elif c:
-                    print('      Above', c[1], end='     ')
-                x += 1
+                # elif c:
+            # print('      Above', c[3], end='     ')
+                # x += 1
             print('   ||')
             x = 0
 # def frac(x: float, precision: int = 10) -> int:
