@@ -6,6 +6,21 @@ from math import floor
 # Teleport to any start position possibility
 # Storing items in Inn?
 # More than sword for weapon - creature weaknesses to weapons
+# Support for beyond 1 distance away sight.
+"""
+  let
+    fx = toFloat p.x
+    fy = toFloat p.y
+    fz = toFloat p.z
+    q = fx * xo + fy * yo + fz * zo + (fx + xo) * (fy + yo) * (fz + zo)
+    h = floor (frac q * 4694)
+    hi = h `div` 256
+    ft = if hi == 0 || hi > 5 then 0 else floor (frac (10 * q) * 15) + 1
+  in
+    {top = if p.y == 1 then WALL else decodeBoundary h,
+     left = if p.x == 1 then WALL else decodeBoundary (h `div` 4),
+     feature = decodeFeature ft}
+"""
 
 
 class Dungeon:
@@ -29,7 +44,7 @@ class Dungeon:
             13: 'Stairway down',
             14: 'Altar',
             15: 'Fountain',
-            16: 'SOLIDSS', }
+            16: 'SOLIDS', }
         # Consider future extension of procedural features, magic mirror, eternal flame
         # Real time override with game state tracking of override occurrence
         self.boundaries = {
@@ -43,8 +58,10 @@ class Dungeon:
 
     def position_bits(self, x: int, y: int, z: int) -> int:
         #  http://elm-telengard.blogspot.com
+        fx, fy, fz = float(x), float(y), float(z)
         (xo, yo, zo) = self.proc_gen
-        q = (x * xo) + (y * yo) + (z * zo) + ((x + xo) * (y + yo) * (z + zo))
+        # q = (x * xo) + (y * yo) + (z * zo) + ((x + xo) * (y + yo) * (z + zo))
+        q = (fx * xo) + (fy * yo) + (fz * zo) + ((fx + xo) * (fy + yo) * (fz + zo))
         # f = (q % 1) * 10000
         # # eight_bit = q << 8
         # res = int(f // 1)
@@ -88,7 +105,7 @@ class Dungeon:
         # north = bin(q)[13:]
         north = bin(q)[-2:]
         b = int(north, 2)
-        b = b % 4
+        # b = b % 4
         return b, self.boundary_lookup(b)
 
     def position_west(self, x: int, y: int, z: int):  # check 2 bits 3 and 2
@@ -120,8 +137,6 @@ class Dungeon:
         p, q, grid = 0, 0, [[] for _ in range((2 * distance) + 1)]
         for i in range(x - distance, x + 1 + distance):
             for j in range(y - distance, y + 1 + distance):
-                # if 0 < i < self.max_width and 0 < j < self.max_height:
-                # print('Grid', i, j, z)
                 grid[p] += [(
                     self.position_north(i, j, z),
                     self.position_west(i, j, z),
@@ -129,8 +144,8 @@ class Dungeon:
                     (i, j, z)
                 )]
             p += 1
-        grid += [[self.position_features(x, y, z + 1), (x, y, z + 1)]]  # above feature for inns/stairs, etc
-        # print(grid)
+        grid += [[self.position_features(x, y, z - 1), (x, y, z - 1)]]  # above feature for inns/stairs, etc
+        print(x, y, z, grid[-1])
         return grid
 
     def print_horizontal(self, boundary, width=3):
@@ -160,10 +175,11 @@ class Dungeon:
         return ' ' * width
 
     def print_grid_around(self, pos, width=7):
-        # print(pos)
-        distance = 2
+        print(pos)
+        distance = 1
         user_loc = self.grid_around(*pos, distance=distance)
         for r in user_loc:
+            # print(r)
             if len(r) != 2:
                 for c in r:
                     print(self.print_horizontal(c[0][0], width=width), end='')
@@ -172,7 +188,7 @@ class Dungeon:
                     print(self.print_feature(c[2][0], width=width), end='')
                 print('   ||')
             else:
-                s = 'Above' + str(c[3])
+                s = 'Above' + str(r)
                 wide = 3 + ((2 * distance) + 1) * width
                 left = wide - len(s)
                 left //= 2
@@ -197,9 +213,9 @@ print("\033[6;3HHello")
 def main():
     # feature check test
     d = Dungeon()
-    positions = [(25, 13, 1), (25, 16, 1), (24, 14, 1), (1, 1, 1), (1, 200, 1)]
-    for p in positions:
-        print(*p, d.position_features(*p))
+    # positions = [(24, 14, 1), (1, 1, 1), (1, 200, 1), (25, 16, 1), (25, 13, 1), (13, 25, 1)]
+    # for p in positions:
+    #     print(*p, d.position_features(*p))
 
     # print(d.position_features(25, 16, 1))  # Throne
     # print(d.position_features(24, 14, 1))  # GMC
@@ -212,9 +228,12 @@ def main():
     # print(d.grid_around(1, 200, 1))
 
     print('\nConfirm Procedural Generation Match to Original\n')
-    pos = [(25, 13, 1), (1, 1, 1), (1, 200, 1)]
+    # pos = [(1, 1, 1), (1, 200, 1), (25, 13, 1), (13, 25, 1)]
+    pos = [(25, 13, 1)]
     for p in pos:
         d.print_grid_around(p)
+
+    print(frac(45.123))
 
 
 if __name__ == '__main__':
