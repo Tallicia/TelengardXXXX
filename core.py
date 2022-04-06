@@ -1,9 +1,10 @@
 from math import floor
 
-# Classic start position 25, 13, 1 - consider random inn/tavern/etc
+# Classic start position 25, 13, 1 - consider random inn/tavern/etc.
 # Teleport to any start position possibility
 # Storing items in Inn?
 # More than sword for weapon - creature weaknesses to weapons
+
 
 class Dungeon:
     def __init__(self):
@@ -28,43 +29,44 @@ class Dungeon:
             15: 'Fountain', }
         # Consider future extension of procedural features, magic mirror, eternal flame
         # Real time override with game state tracking of override occurrence
-
         self.boundaries = {
             0: None,
             1: None,
             2: 'Door',
             3: 'Wall', }
+        self.tracker = 'init'
 
     def position_bits(self, x: int, y: int, z: int) -> int:
         #  http://elm-telengard.blogspot.com
         xo, yo, zo = 1.6915, 1.4278, 1.2462
         q = (x * xo) + (y * yo) + (z * zo) + ((x + xo) * (y + yo) * (z + zo))
         # f = (q % 1) * 10000
-        # # eight_bitf = q << 8
+        # # eight_bit = q << 8
         # res = int(f // 1)
         # res *= 4694
         f = frac(q)
         res = floor(f * 4694)
+        self.tracker = 'position_bits' + str(q) + str(f) + str(res)
         return res
 
-    def position_features(self, x: int, y: int, z: int) -> str:
+    def position_features(self, x: int, y: int, z: int):
         q = self.position_bits(x, y, z)
         hi = q // 256
         if hi == 0 or hi > 5:
             ft = 0
         else:
-            ft = floor(frac(10 * q) * 15) + 1  # this might be easier with 8 bit shift
-            # ft = floor(frac(10 * q) * 15) + 1  # Feature determination
+            ft = floor(frac(10 * q) * 15) + 1  # Feature determination - possibly easier with 8 bit shift
         # b = bin(q)[2:7]
         # bin_array = bin(q)[2 - (13 - len(bin(q)[0:6])):]  # Features 5 bits 12 - 8
         # b = bin_array[2:7]
         # ft = int(b, 2)
+        ft = ft % 16
         if ft in self.features.keys():
             return ft, self.features[ft]
         else:
             return ft, None
 
-    def position_north(self, x: int, y: int, z: int) -> str:  # check 2 bits 1 and 0
+    def position_north(self, x: int, y: int, z: int):  # check 2 bits 1 and 0
         if y == 1 or y == self.max_height + 1:
             return 'Wall'
         q = self.position_bits(x, y, z)
@@ -74,10 +76,10 @@ class Dungeon:
         # north = bin(q)[13:]
         north = bin(q)[-2:]
         b = int(north, 2)
-        # return self.boundaries[b]
+        b = b % 4
         return self.boundary_lookup(b)
 
-    def position_west(self, x: int, y: int, z: int) -> str:  # check 2 bits 3 and 2
+    def position_west(self, x: int, y: int, z: int):  # check 2 bits 3 and 2
         # consider wrap or larger size as well logic
         if x == 1 or x == self.max_width + 1:
             return 'Wall'
@@ -89,6 +91,7 @@ class Dungeon:
         # b = floor(frac(10 * q) * 5) + 1
         b = int(west, 2)
         # b = q // 4
+        b = b % 4
         return self.boundary_lookup(b)
 
     def boundary_lookup(self, b):
@@ -114,8 +117,8 @@ class Dungeon:
 
 # def frac(x: float, precision: int = 10) -> int:
 #     return floor((x % 1) * precision)
-#frac r = r - toFloat (floor r)
-def frac(x: float) -> int:
+# frac r = r - toFloat (floor r)
+def frac(x: float) -> float:
     return x - float(floor(x))
 
 
@@ -144,7 +147,7 @@ def main():
     for r in user_loc:
         for c in r:
             if c and len(c) == 3:
-                print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end='::')
+                print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end=' || ')
                 if x % 3 == 0:
                     print()
                 x += 1
