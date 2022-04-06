@@ -108,7 +108,7 @@ class Dungeon:
                         self.position_features(i, j, z)
                     )]
             p += 1
-        grid += [self.position_features(x, y, z + 1)]
+        grid += [[self.position_features(x, y, z + 1)]]  # above feature for inns/stairs, etc
         return grid
 
 
@@ -124,7 +124,7 @@ def main():
     d = Dungeon()
     positions = [(25, 13, 1), (25, 16, 1), (24, 14, 1), ]
     for p in positions:
-        print(p[0], p[1], p[2], d.position_features(p[0], p[1], p[2]))
+        print(*p, d.position_features(*p))
 
     # print(d.position_features(25, 16, 1))  # Throne
     # print(d.position_features(24, 14, 1))  # GMC
@@ -135,13 +135,22 @@ def main():
 
     # print(d.grid_around(1, 1, 1))
     # print(d.grid_around(1, 200, 1))
+
+    print('\nConfirm Procedural Generation Match to Original\n')
     x = 1
-    for r in d.grid_around(25, 13, 1):
+    pos = (25, 13, 1)
+    user_loc = d.grid_around(*pos)
+    # print(d.grid_around(25, 13, 1))
+    for r in user_loc:
+        # print(r)
         for c in r:
-            print('N-', c[0], 'W-', c[1], 'F-', c[2], end='::')
-            if x % 3 == 0:
-                print()
-            x += 1
+            if c and len(c) == 3:
+                print('N-', c[0], 'W-', c[1], 'F-', c[2], end='::')
+                if x % 3 == 0:
+                    print()
+                x += 1
+            elif c:
+                print('Above', c)
         x = 1
 
 
