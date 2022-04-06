@@ -39,10 +39,11 @@ class Dungeon:
             3: 'Wall',
             4: 'Solid', }
         self.tracker = 'init'
+        self.proc_gen = (1.6915, 1.4278, 1.2462)
 
     def position_bits(self, x: int, y: int, z: int) -> int:
         #  http://elm-telengard.blogspot.com
-        xo, yo, zo = 1.6915, 1.4278, 1.2462
+        (xo, yo, zo) = self.proc_gen
         q = (x * xo) + (y * yo) + (z * zo) + ((x + xo) * (y + yo) * (z + zo))
         # f = (q % 1) * 10000
         # # eight_bit = q << 8
@@ -115,19 +116,21 @@ class Dungeon:
         else:
             return b, None
 
-    def grid_around(self, x: int, y: int, z: int) -> [[]]:
-        p, q, grid = 0, 0, [[] for _ in range(3)]
-        for i in range(x - 1, x + 2):
-            for j in range(y - 1, y + 2):
+    def grid_around(self, x: int, y: int, z: int, distance=1) -> [[]]:
+        p, q, grid = 0, 0, [[] for _ in range((2 * distance) + 1)]
+        for i in range(x - distance, x + 1 + distance):
+            for j in range(y - distance, y + 1 + distance):
                 # if 0 < i < self.max_width and 0 < j < self.max_height:
                 # print('Grid', i, j, z)
                 grid[p] += [(
                     self.position_north(i, j, z),
                     self.position_west(i, j, z),
-                    self.position_features(i, j, z)
+                    self.position_features(i, j, z),
+                    (i, j, z)
                 )]
             p += 1
-        grid += [[self.position_features(x, y, z + 1)]]  # above feature for inns/stairs, etc
+        grid += [[self.position_features(x, y, z + 1), (x, y, z + 1)]]  # above feature for inns/stairs, etc
+        # print(grid)
         return grid
 
     def print_horizontal(self, boundary, width=3):
@@ -157,43 +160,25 @@ class Dungeon:
         return ' ' * width
 
     def print_grid_around(self, pos, width=7):
-        print(pos)
-        x = 0
-        user_loc = self.grid_around(*pos)
-        # print(d.grid_around(25, 13, 1))
+        # print(pos)
+        distance = 2
+        user_loc = self.grid_around(*pos, distance=distance)
         for r in user_loc:
-            # print(r)
-            if len(r) == 3:
-                c = r[0]
-            # for c in r:
-                # print(c, c[x])
-                # if len(c) == 3:
-                    # print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end=' || ')
-                    # for x in range(3):
-                print(self.print_horizontal(c[0][0], width=width), end='')
-                c = r[1]
-                print(self.print_horizontal(c[0][0], width=width), end='')
-                c = r[2]
-                print(self.print_horizontal(c[0][0], width=width), end='')
-                c = r[0]
+            if len(r) != 2:
+                for c in r:
+                    print(self.print_horizontal(c[0][0], width=width), end='')
                 print('   ||')
-                print(self.print_feature(c[2][0], width=width), end='')
-                c = r[1]
-                print(self.print_feature(c[2][0], width=width), end='')
-                c = r[2]
-                print(self.print_feature(c[2][0], width=width), end='')
-                # for x in range(3):
-                    #     print(self.print_vertical(c[1][0], width=width))
-                    # print(self.print_horizontal(c[0][0]), self.print_vertical(c[1][0]), end='')
-                          # , 'F-', c[2][1], end='')
-                    # if x % 3 == 0:
-                    #     print()
-                    # x += 1
-                # elif c:
-            # print('      Above', c[3], end='     ')
-                # x += 1
-            print('   ||')
-            x = 0
+                for c in r:
+                    print(self.print_feature(c[2][0], width=width), end='')
+                print('   ||')
+            else:
+                s = 'Above' + str(c[3])
+                wide = 3 + ((2 * distance) + 1) * width
+                left = wide - len(s)
+                left //= 2
+                ends = ' ' * left
+                s = ends + s + ends
+                print(s, end='||\n')
 # def frac(x: float, precision: int = 10) -> int:
 #     return floor((x % 1) * precision)
 # frac r = r - toFloat (floor r)
