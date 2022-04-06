@@ -1,6 +1,8 @@
 from math import floor
 
+# X East, Y South, Z Deeper
 # Classic start position 25, 13, 1 - consider random inn/tavern/etc.
+# Scale / Zoom Dungeon
 # Teleport to any start position possibility
 # Storing items in Inn?
 # More than sword for weapon - creature weaknesses to weapons
@@ -26,14 +28,16 @@ class Dungeon:
             12: 'Teleporter',
             13: 'Stairway down',
             14: 'Altar',
-            15: 'Fountain', }
+            15: 'Fountain',
+            16: 'Solid', }
         # Consider future extension of procedural features, magic mirror, eternal flame
         # Real time override with game state tracking of override occurrence
         self.boundaries = {
             0: None,
             1: None,
             2: 'Door',
-            3: 'Wall', }
+            3: 'Wall',
+            4: 'Solid', }
         self.tracker = 'init'
 
     def position_bits(self, x: int, y: int, z: int) -> int:
@@ -67,8 +71,12 @@ class Dungeon:
             return ft, None
 
     def position_north(self, x: int, y: int, z: int):  # check 2 bits 1 and 0
-        if y == 1 or y == self.max_height + 1:
-            return 'Wall'
+        if x < 1 or x > self.max_height or y < 1 or y > self.max_height:
+            b = 4  # Solid
+            return b, self.boundary_lookup(b)
+        if x == 1 or x == self.max_height:
+            b = 3  # Wall
+            return b, self.boundary_lookup(b)
         q = self.position_bits(x, y, z)
         # bin_array = bin(q)[2 - (13 - len(bin(q)[2:])):]
         # north = bin_array[0:1]
@@ -77,12 +85,16 @@ class Dungeon:
         north = bin(q)[-2:]
         b = int(north, 2)
         b = b % 4
-        return self.boundary_lookup(b)
+        return b, self.boundary_lookup(b)
 
     def position_west(self, x: int, y: int, z: int):  # check 2 bits 3 and 2
         # consider wrap or larger size as well logic
-        if x == 1 or x == self.max_width + 1:
-            return 'Wall'
+        if x < 1 or x > self.max_height or y < 1 or y > self.max_height:
+            b = 4  # Solid
+            return b, self.boundary_lookup(b)
+        if y == 1 or y == self.max_height:
+            b = 3  # Wall
+            return b, self.boundary_lookup(b)
         q = self.position_bits(x, y, z)
         # bin_array = bin(q)[2 - (13 - len(bin(q)[2:])):]
         # west = bin_array[2:3]
@@ -92,7 +104,7 @@ class Dungeon:
         b = int(west, 2)
         # b = q // 4
         b = b % 4
-        return self.boundary_lookup(b)
+        return b, self.boundary_lookup(b)
 
     def boundary_lookup(self, b):
         if b in self.boundaries.keys():
@@ -102,30 +114,81 @@ class Dungeon:
 
     def grid_around(self, x: int, y: int, z: int) -> [[]]:
         p, q, grid = 0, 0, [[] for _ in range(3)]
-        for i in range(x-1, x+2):
+        for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if 0 < i < self.max_width and 0 < j < self.max_height:
-                    grid[p] += [(
-                        self.position_north(i, j, z),
-                        self.position_west(i, j, z),
-                        self.position_features(i, j, z)
-                    )]
+                # if 0 < i < self.max_width and 0 < j < self.max_height:
+                # print('Grid', i, j, z)
+                grid[p] += [(
+                    self.position_north(i, j, z),
+                    self.position_west(i, j, z),
+                    self.position_features(i, j, z)
+                )]
             p += 1
         grid += [[self.position_features(x, y, z + 1)]]  # above feature for inns/stairs, etc
         return grid
 
+    def print_horizontal(self, boundary, width=3):
+        self.tracker = self.__module__ + str(width) + str(boundary)
+        if boundary == 2:  # Door
+            return 'X'+(width - 2)*'-'+'X'
+        if boundary == 3:  # Wall
+            return width * 'X'
+        if boundary == 4:  # Wall
+            return width * '8'
+        return ' ' * width
 
+    def print_vertical(self, boundary, width=3):
+        self.tracker = self.__module__ + str(width) + str(boundary)
+        if boundary == 2:  # Door
+            return 'X'+((width - 2) * '\n')+'X'
+        if boundary >= 3:  # Wall
+            return width * 'X\n'
+        return '\n'*width
+
+    def print_grid_around(self, pos, width=7):
+        print(pos)
+        x = 0
+        user_loc = self.grid_around(*pos)
+        # print(d.grid_around(25, 13, 1))
+        for r in user_loc:
+            # print(r)
+            for c in r:
+                # print(c, c[x])
+                if len(c) == 3:
+                    # print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end=' || ')
+                    # for x in range(3):
+                    print(self.print_horizontal(c[0][0], width=width), end='')
+                    # for x in range(3):
+                    #     print(self.print_vertical(c[1][0], width=width))
+                    # print(self.print_horizontal(c[0][0]), self.print_vertical(c[1][0]), end='')
+                          # , 'F-', c[2][1], end='')
+                    # if x % 3 == 0:
+                    #     print()
+                    # x += 1
+                elif c:
+                    print('      Above', c[1], end='     ')
+                x += 1
+            print('   ||')
+            x = 0
 # def frac(x: float, precision: int = 10) -> int:
 #     return floor((x % 1) * precision)
 # frac r = r - toFloat (floor r)
+
+
 def frac(x: float) -> float:
     return x - float(floor(x))
+
+
+"""
+Using ANSI escape sequence, where ESC[y;xH moves curser to row y, col x:
+print("\033[6;3HHello")
+"""
 
 
 def main():
     # feature check test
     d = Dungeon()
-    positions = [(25, 13, 1), (25, 16, 1), (24, 14, 1), ]
+    positions = [(25, 13, 1), (25, 16, 1), (24, 14, 1), (1, 1, 1), (1, 200, 1)]
     for p in positions:
         print(*p, d.position_features(*p))
 
@@ -140,20 +203,9 @@ def main():
     # print(d.grid_around(1, 200, 1))
 
     print('\nConfirm Procedural Generation Match to Original\n')
-    x = 1
-    pos = (25, 13, 1)
-    user_loc = d.grid_around(*pos)
-    # print(d.grid_around(25, 13, 1))
-    for r in user_loc:
-        for c in r:
-            if c and len(c) == 3:
-                print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end=' || ')
-                if x % 3 == 0:
-                    print()
-                x += 1
-            elif c:
-                print('Above', c[1])
-        x = 1
+    pos = [(25, 13, 1), (1, 1, 1), (1, 200, 1)]
+    for p in pos:
+        d.print_grid_around(p)
 
 
 if __name__ == '__main__':
