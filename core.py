@@ -60,9 +60,9 @@ class Dungeon:
         # b = bin_array[2:7]
         # ft = int(b, 2)
         if ft in self.features.keys():
-            return self.features[ft]
+            return ft, self.features[ft]
         else:
-            return None
+            return ft, None
 
     def position_north(self, x: int, y: int, z: int) -> str:  # check 2 bits 1 and 0
         if y == 1 or y == self.max_height + 1:
@@ -75,10 +75,7 @@ class Dungeon:
         north = bin(q)[-2:]
         b = int(north, 2)
         # return self.boundaries[b]
-        if b in self.boundaries.keys():
-            return self.boundaries[b]
-        else:
-            return None
+        return self.boundary_lookup(b)
 
     def position_west(self, x: int, y: int, z: int) -> str:  # check 2 bits 3 and 2
         # consider wrap or larger size as well logic
@@ -92,10 +89,13 @@ class Dungeon:
         # b = floor(frac(10 * q) * 5) + 1
         b = int(west, 2)
         # b = q // 4
+        return self.boundary_lookup(b)
+
+    def boundary_lookup(self, b):
         if b in self.boundaries.keys():
-            return self.boundaries[b]
+            return b, self.boundaries[b]
         else:
-            return None
+            return b, None
 
     def grid_around(self, x: int, y: int, z: int) -> [[]]:
         p, q, grid = 0, 0, [[] for _ in range(3)]
@@ -142,15 +142,14 @@ def main():
     user_loc = d.grid_around(*pos)
     # print(d.grid_around(25, 13, 1))
     for r in user_loc:
-        # print(r)
         for c in r:
             if c and len(c) == 3:
-                print('N-', c[0], 'W-', c[1], 'F-', c[2], end='::')
+                print('N-', c[0][1], 'W-', c[1][1], 'F-', c[2][1], end='::')
                 if x % 3 == 0:
                     print()
                 x += 1
             elif c:
-                print('Above', c)
+                print('Above', c[1])
         x = 1
 
 
